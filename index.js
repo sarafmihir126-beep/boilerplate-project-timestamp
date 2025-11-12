@@ -1,32 +1,50 @@
-// index.js
-// where your node app starts
+// server.js
+const express = require("express");
+const app = express();
 
-// init project
-var express = require('express');
-var app = express();
+// Serve static files (like your index.html)
+app.use(express.static("public"));
 
-// enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
-// so that your API is remotely testable by FCC 
-var cors = require('cors');
-app.use(cors({optionsSuccessStatus: 200}));  // some legacy browsers choke on 204
-
-// http://expressjs.com/en/starter/static-files.html
-app.use(express.static('public'));
-
-// http://expressjs.com/en/starter/basic-routing.html
-app.get("/", function (req, res) {
-  res.sendFile(__dirname + '/views/index.html');
+// Root route
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/views/index.html");
 });
 
+// API route
+app.get("/api/:date?", (req, res) => {
+  let { date } = req.params;
 
-// your first API endpoint... 
-app.get("/api/hello", function (req, res) {
-  res.json({greeting: 'hello API'});
+  // If no date is provided, use the current date
+  if (!date) {
+    const now = new Date();
+    return res.json({
+      unix: now.getTime(),
+      utc: now.toUTCString(),
+    });
+  }
+
+  // Check if the date is a valid timestamp number
+  // (like 1451001600000)
+  if (!isNaN(date)) {
+    date = parseInt(date);
+  }
+
+  const parsedDate = new Date(date);
+
+  // Handle invalid dates
+  if (parsedDate.toString() === "Invalid Date") {
+    return res.json({ error: "Invalid Date" });
+  }
+
+  // Return valid date response
+  return res.json({
+    unix: parsedDate.getTime(),
+    utc: parsedDate.toUTCString(),
+  });
 });
 
-
-
-// Listen on port set in environment variable or default to 3000
-var listener = app.listen(process.env.PORT || 3000, function () {
-  console.log('Your app is listening on port ' + listener.address().port);
+// Listen for requests
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`App is listening on port ${port}`);
 });
